@@ -13,8 +13,6 @@
 // Greater than or equal
 DEVICE bool FIELD_gte(FIELD a, FIELD b) {
   for(char i = FIELD_LIMBS - 1; i >= 0; i--){
-    
-  printf("compre i %u a %u b %u\n", i, a.val[i], b.val[i]);
     if(a.val[i] > b.val[i])
       return true;
     if(a.val[i] < b.val[i])

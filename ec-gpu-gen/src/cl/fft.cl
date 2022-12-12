@@ -144,8 +144,6 @@ KERNEL void FIELD_sort(
   uint gid = GET_GLOBAL_ID();
   uint id = gid;
 
-  printf("id is %u\n", id);
-
   uint direction = (id >> i) & 1;
   uint log_step = i - j;
   uint step = 1 << log_step;
@@ -153,8 +151,7 @@ KERNEL void FIELD_sort(
   uint index0 = ((id >> log_step) << (log_step + 1)) | offset;
   uint index1 = index0 | step;
 
-  printf("index0 %u index1 %u direction %u compare %u\n", index0, index1, direction, FIELD_gte(value[index0], value[index1]));
-  if (FIELD_gte(value[index0], value[index1]) ^ direction) 
+  if (FIELD_gte(FIELD_unmont(value[index0]), FIELD_unmont(value[index1])) ^ direction) 
   {
     FIELD t = value[index0];
     value[index0] = value[index1];
