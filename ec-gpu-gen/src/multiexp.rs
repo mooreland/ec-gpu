@@ -119,6 +119,32 @@ where
         })
     }
 
+    /// Create a new Multiexp kernel instance for a device with partial work units.
+    ///
+    /// The `maybe_abort` function is called when it is possible to abort the computation, without
+    /// leaving the GPU in a weird state. If that function returns `true`, execution is aborted.
+    pub fn create_with_partial_work_units(
+        program: Program,
+        device: &Device,
+        maybe_abort: Option<&'a (dyn Fn() -> bool + Send + Sync)>,
+        work_units_ratio: (usize, usize),
+    ) -> EcResult<Self> {
+        let mem = device.memory();
+        let compute_units = device.compute_units();
+        let compute_capability = device.compute_capability();
+        let work_units =
+            work_units(compute_units, compute_capability) * work_units_ratio.0 / work_units_ratio.1;
+        let chunk_size = calc_chunk_size::<G>(mem, work_units);
+
+        Ok(SingleMultiexpKernel {
+            program,
+            n: chunk_size,
+            work_units,
+            maybe_abort,
+            _phantom: std::marker::PhantomData,
+        })
+    }
+
     /// Run the actual multiexp computation on the GPU.
     ///
     /// The number of `bases` and `exponents` are determined by [`SingleMultiexpKernel`]`::n`, this
