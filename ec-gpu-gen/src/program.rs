@@ -43,7 +43,7 @@ macro_rules! program {
                 #[cfg(feature = "cuda")]
                 Framework::Cuda => {
                     let kernel = include_bytes!(env!("_EC_GPU_CUDA_KERNEL_FATBIN"));
-                    let cuda_device = device.cuda_device().ok_or(GPUError::DeviceNotFound)?;
+                    let cuda_device = device.cuda_device().unwrap();
                     let program = $crate::rust_gpu_tools::cuda::Program::from_bytes(cuda_device, kernel)?;
                     Ok(Program::Cuda(program))
                 }
