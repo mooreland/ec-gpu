@@ -254,7 +254,6 @@ KERNEL void FIELD_eval_h_lookups(
 
 KERNEL void FIELD_eval_h_shuffles(
   GLOBAL FIELD* values,
-//  GLOBAL FIELD* table,
   GLOBAL FIELD* input_coset,
   GLOBAL FIELD* shuffle_coset,
   GLOBAL FIELD* product_coset,
@@ -290,13 +289,12 @@ KERNEL void FIELD_eval_h_shuffles(
   //   - z(X) (a(X) + \gamma)
   // ) = 0
   value = FIELD_mul(value, y_beta_gamma[0]);
-  tmp = FIELD_add(shuffle_coset[idx], y_beta_gamma[2]);
-  tmp = FIELD_mul(tmp, product_coset[r_next]);
-  FIELD tmp2 = FIELD_add(input_coset[idx], y_beta_gamma[2]);
-  tmp2 = FIELD_mul(tmp2,product_coset[idx]);
+  tmp = FIELD_mul(shuffle_coset[idx], product_coset[r_next]);
+  FIELD tmp2 = FIELD_mul(input_coset[idx],product_coset[idx]);
   tmp = FIELD_sub(tmp, tmp2);
   tmp = FIELD_mul(tmp, l_active_row[idx]);
-  value = FIELD_add(value, tmp);
+
+  values[idx] = FIELD_add(value, tmp);
 }
 
 
