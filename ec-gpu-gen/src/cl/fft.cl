@@ -250,6 +250,52 @@ KERNEL void FIELD_eval_h_lookups(
   values[idx] = FIELD_add(value, tmp);
 }
 
+
+KERNEL void FIELD_eval_h_shuffles(
+  GLOBAL FIELD* values,
+  GLOBAL FIELD* input_coset,
+  GLOBAL FIELD* table_coset,
+  GLOBAL FIELD* product_coset,
+  GLOBAL FIELD* l0,
+  GLOBAL FIELD* l_last,
+  GLOBAL FIELD* l_active_row,
+  GLOBAL FIELD* y_beta_gamma,
+  uint rot,
+  uint size
+) {
+  uint gid = GET_GLOBAL_ID();
+  uint idx = gid;
+
+  uint r_next = (idx + rot) & (size - 1);
+
+  FIELD value = values[idx];
+
+  // l_0(X) * (1 - z(X)) = 0
+  value = FIELD_mul(value, y_beta_gamma[0]);
+  FIELD tmp = FIELD_sub(FIELD_ONE, product_coset[idx]);
+  tmp = FIELD_mul(tmp, l0[idx]);
+  value = FIELD_add(value, tmp);
+
+  // l_last(X) * (z(X)^2 - z(X)) = 0
+  value = FIELD_mul(value, y_beta_gamma[0]);
+  tmp = FIELD_sqr(product_coset[idx]);
+  tmp = FIELD_sub(tmp, product_coset[idx]);
+  tmp = FIELD_mul(tmp, l_last[idx]);
+  value = FIELD_add(value, tmp);
+
+  // (1 - (l_last(X) + l_blind(X))) * (
+  //   z(\omega X) (s(X) + \beta^i) - z(X) (a(X) + \beta^i)) = 0
+  // note: beta^i calculated in input/table coset already
+  value = FIELD_mul(value, y_beta_gamma[0]);
+  tmp = FIELD_mul(table_coset[idx], product_coset[r_next]);
+  FIELD tmp2 = FIELD_mul(input_coset[idx],product_coset[idx]);
+  tmp = FIELD_sub(tmp, tmp2);
+  tmp = FIELD_mul(tmp, l_active_row[idx]);
+
+  values[idx] = FIELD_add(value, tmp);
+}
+
+
 KERNEL void FIELD_eval_constant(
   GLOBAL FIELD* value,
   GLOBAL FIELD* c
