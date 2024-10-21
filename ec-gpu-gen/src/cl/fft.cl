@@ -251,6 +251,61 @@ KERNEL void FIELD_eval_h_lookups(
 }
 
 
+KERNEL void FIELD_eval_h_logups(
+  GLOBAL FIELD* values,
+  GLOBAL FIELD* table,
+  GLOBAL FIELD* input_product,
+  GLOBAL FIELD* input_product_sum,
+  GLOBAL FIELD* m_poly_coset,
+  GLOBAL FIELD* grand_sum_coset,
+  GLOBAL FIELD* l0,
+  GLOBAL FIELD* l_last,
+  GLOBAL FIELD* l_active_row,
+  GLOBAL FIELD* y_beta,
+  uint rot,
+  uint size
+) {
+  uint gid = GET_GLOBAL_ID();
+  uint idx = gid;
+
+  uint r_next = (idx + rot) & (size - 1);
+  uint r_prev = (idx + size - rot) & (size - 1);
+
+  FIELD value = values[idx];
+
+  // l_0(X) * (z(X)) = 0
+  value = FIELD_mul(value, y_beta[0]);
+  FIELD tmp = FIELD_mul(product_coset[idx], l0[idx]);
+  value = FIELD_add(value, tmp);
+
+  // l_last(X) * (z(X)) = 0
+  value = FIELD_mul(value, y_beta_gamma[0]);
+  tmp = FIELD_mul(product_coset[idx], l_last[idx]);
+  value = FIELD_add(value, tmp);
+
+  // (1 - (l_last(X) + l_blind(X))) * (
+  //   τ(X) * Π(φ_i(X)) * (ϕ(gX) - ϕ(X))
+  //   - ∑_i τ(X) * Π_{j != i} φ_j(X) + m(X) * Π(φ_i(X))
+  // ) = 0
+  //=>(1 - (l_last(X) + l_blind(X))) * (
+  //   (τ(X) * (ϕ(gX) - ϕ(X))+m(X))* Π(φ_i(X))
+  //   - ∑_i τ(X) * Π_{j != i} φ_j(X)
+  // ) = 0
+
+  value = FIELD_mul(value, y_beta_gamma[0]);
+  tmp = FIELD_sub(grand_sum_coset[idx],grand_sum_coset[r_next]);
+  tmp = FIELD_mul(tmp, table[idx]);
+  tmp = FILED_add(tmp, m_poly[idx]);
+  tmp = FIELD_mul(tmp, input_product[idx]);
+  FIELD tmp2 = FIELD_mul(table[idx],input_product_sum[idx]);
+  tmp = FIELD_sub(tmp,tmp2);
+  tmp = FIELD_mul(tmp, l_active_row[idx]);
+  value = FIELD_add(value, tmp);
+
+}
+
+
+
 KERNEL void FIELD_eval_h_shuffles(
   GLOBAL FIELD* values,
   GLOBAL FIELD* input_coset,
